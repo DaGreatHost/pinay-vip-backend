@@ -12,7 +12,7 @@ CORS(app)
 
 DATA_FILE = "data/access_codes.json"
 
-# Make sure the file exists
+# Ensure data directory and file exist
 if not os.path.exists("data"):
     os.makedirs("data")
 
@@ -20,16 +20,13 @@ if not os.path.exists(DATA_FILE):
     with open(DATA_FILE, "w") as f:
         json.dump({}, f)
 
-
 def load_codes():
     with open(DATA_FILE, "r") as f:
         return json.load(f)
 
-
 def save_codes(data):
     with open(DATA_FILE, "w") as f:
         json.dump(data, f, indent=4)
-
 
 @app.route("/verify_code", methods=["POST"])
 def verify_code():
@@ -46,9 +43,9 @@ def verify_code():
     save_codes(data)
     return jsonify({"status": "success"})
 
-
 @app.route("/generate_code", methods=["POST"])
 def generate_code():
+    print("✅ /generate_code called")
     from random import choices
     import string
     new_code = ''.join(choices(string.ascii_uppercase + string.digits, k=6))
@@ -56,7 +53,6 @@ def generate_code():
     data[new_code] = {"used": False}
     save_codes(data)
     return jsonify({"code": new_code})
-
 
 @app.route("/access_codes.json", methods=["GET"])
 def get_codes():
@@ -67,11 +63,9 @@ def get_codes():
     except:
         return jsonify({"error": "Could not load codes"}), 500
 
-
 @app.route("/fetch_posts", methods=["GET"])
 def fetch_posts():
     return asyncio.run(get_telegram_posts())
-
 
 async def get_telegram_posts():
     api_id = int(os.getenv("TELEGRAM_API_ID"))
@@ -100,7 +94,6 @@ async def get_telegram_posts():
                     })
 
     return jsonify(posts)
-
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
