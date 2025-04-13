@@ -51,6 +51,14 @@ def fetch_posts():
         {"type": "video", "url": "https://example.com/video1.mp4", "caption": "Video sample", "timestamp": "2025-04-13"}
     ])
 
+@app.route("/access_codes.json", methods=["GET"])
+def get_codes():
+    try:
+        with open(DATA_FILE, "r") as f:
+            data = json.load(f)
+        return jsonify(data)
+    except:
+        return jsonify({"error": "Could not load codes"}), 500
+
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)
-
