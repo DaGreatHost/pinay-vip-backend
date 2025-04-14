@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from datetime import datetime
-import os, json, asyncio, string
+import os, json, asyncio, string, logging
 from random import choices
 
 from telethon.sync import TelegramClient
@@ -10,6 +10,9 @@ from telethon.tl.types import MessageMediaPhoto, MessageMediaDocument, DocumentA
 # Flask app setup
 app = Flask(__name__)
 CORS(app, origins=["https://tgreward.shop"], supports_credentials=True)
+
+# Logging for Railway logs
+logging.basicConfig(level=logging.INFO)
 
 DATA_FILE = "data/access_codes.json"
 
@@ -32,8 +35,14 @@ def save_codes(data):
 @app.route("/verify_code", methods=["POST"])
 def verify_code():
     payload = request.get_json()
+    if not payload:
+        return jsonify({"error": "Missing JSON body"}), 400
+
     device_id = payload.get("device_id")
     code = payload.get("code")
+
+    if not device_id or not code:
+        return jsonify({"error": "Missing 'device_id' or 'code'"}), 400
 
     data = load_codes()
     if code not in data or data[code]["used"]:
@@ -49,12 +58,16 @@ def verify_code():
 # Generate a new 6-character access code
 @app.route("/generate_code", methods=["POST"])
 def generate_code():
-    new_code = ''.join(choices(string.ascii_uppercase + string.digits, k=6))
-    data = load_codes()
-    data[new_code] = {"used": False}
-    save_codes(data)
-
-    return jsonify({"code": new_code})
+    try:
+        new_code = ''.join(choices(string.ascii_uppercase + string.digits, k=6))
+        data = load_codes()
+        data[new_code] = {"used": False}
+        save_codes(data)
+        app.logger.info(f"✅ New code generated: {new_code}")
+        return jsonify({"code": new_code})
+    except Exception as e:
+        app.logger.error(f"❌ Error generating code: {str(e)}")
+        return jsonify({"error": f"Failed to generate code: {str(e)}"}), 500
 
 # Endpoint to return all access codes
 @app.route("/access_codes.json", methods=["GET"])
