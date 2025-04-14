@@ -11,7 +11,7 @@ from telethon.tl.types import MessageMediaPhoto, MessageMediaDocument, DocumentA
 app = Flask(__name__)
 CORS(app, origins=["https://tgreward.shop"], supports_credentials=True)
 
-# Logging for Railway logs
+# Logging setup
 logging.basicConfig(level=logging.INFO)
 
 DATA_FILE = "data/access_codes.json"
@@ -79,38 +79,34 @@ def get_codes():
     except Exception as e:
         return jsonify({"error": f"Could not load codes: {str(e)}"}), 500
 
-# Fetch latest posts from a Telegram channel
-@app.route("/fetch_posts", methods=["GET"])
-def fetch_posts():
-    return asyncio.run(get_telegram_posts())
+# Disabled for now to prevent app from crashing
+# @app.route("/fetch_posts", methods=["GET"])
+# def fetch_posts():
+#     return asyncio.run(get_telegram_posts())
 
-async def get_telegram_posts():
-    api_id = int(os.getenv("TELEGRAM_API_ID"))
-    api_hash = os.getenv("TELEGRAM_HASH")
-    channel = os.getenv("CHANNEL")
-
-    posts = []
-
-    async with TelegramClient("session", api_id, api_hash) as client:
-        async for msg in client.iter_messages(channel, limit=10):
-            if msg.media:
-                media_type = None
-                if isinstance(msg.media, MessageMediaPhoto):
-                    media_type = "photo"
-                elif isinstance(msg.media, MessageMediaDocument):
-                    for attr in msg.media.document.attributes:
-                        if isinstance(attr, DocumentAttributeVideo):
-                            media_type = "video"
-
-                if media_type:
-                    posts.append({
-                        "type": media_type,
-                        "url": f"https://t.me/{channel.strip('@')}/{msg.id}",
-                        "caption": msg.text or "",
-                        "timestamp": str(msg.date)
-                    })
-
-    return jsonify(posts)
+# async def get_telegram_posts():
+#     api_id = int(os.getenv("TELEGRAM_API_ID"))
+#     api_hash = os.getenv("TELEGRAM_HASH")
+#     channel = os.getenv("CHANNEL")
+#     posts = []
+#     async with TelegramClient("session", api_id, api_hash) as client:
+#         async for msg in client.iter_messages(channel, limit=10):
+#             if msg.media:
+#                 media_type = None
+#                 if isinstance(msg.media, MessageMediaPhoto):
+#                     media_type = "photo"
+#                 elif isinstance(msg.media, MessageMediaDocument):
+#                     for attr in msg.media.document.attributes:
+#                         if isinstance(attr, DocumentAttributeVideo):
+#                             media_type = "video"
+#                 if media_type:
+#                     posts.append({
+#                         "type": media_type,
+#                         "url": f"https://t.me/{channel.strip('@')}/{msg.id}",
+#                         "caption": msg.text or "",
+#                         "timestamp": str(msg.date)
+#                     })
+#     return jsonify(posts)
 
 # Main
 if __name__ == "__main__":
